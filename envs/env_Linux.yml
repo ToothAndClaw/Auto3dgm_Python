@@ -1,0 +1,34 @@
+name: auto3dgm
+channels:
+  - defaults
+dependencies:
+  - ca-certificates
+  - certifi
+  - openssl
+  - pip
+  - python=3.7.11
+  - six
+  - sqlite
+  - wheel
+  - pip:
+    - asynctest
+    - kiwisolver
+    - lap
+    - matplotlib
+    - mayavi==4.7.2
+    - numpy
+    - pandas
+    - pathos==0.2.8
+    - pillow
+    - psutil
+    - python-dateutil
+    - pytz
+    - rtree
+    - scikit-learn
+    - scipy
+    - setuptools
+    - traits
+    - traitsui
+    - trimesh==3.7.14
+    - vtk==9.0.1
+prefix: /Users/USERNAME/anaconda3/envs/auto3dgm

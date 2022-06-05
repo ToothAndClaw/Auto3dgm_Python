@@ -1,0 +1,1 @@
+{"num_subsample": [100, 200], "seed": null, "num_cores": 8, "sample_method": "FPS", "reflection": true, "mesh_dir": "C:/Users/rober/PersonalProjects/ToothAndClaw/Auto3dgm_Hamate_Test/originalMeshes/", "output_dir": "C:/Users/rober/PersonalProjects/ToothAndClaw/Auto3dgm_Hamate_Test/"}
