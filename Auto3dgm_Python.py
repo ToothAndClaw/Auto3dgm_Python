@@ -386,6 +386,7 @@ class interface:
             aligned_mesh, _ = self.Centralize(aligned_mesh, scale=None)
             aligned_mesh.export(output_dir + name + '.ply')
             name = name.replace("_", "-")
+            aligned_mesh, _ = self.Centralize(aligned_mesh, scale=1)
             aligned_mesh.export(viewer_dir + name + '.obj')
 
 
