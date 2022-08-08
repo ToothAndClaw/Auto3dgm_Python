@@ -1,6 +1,7 @@
 import tkinter.filedialog
 import tkinter as tk
 import os
+import csv
 import multiprocessing
 import psutil
 import threading
@@ -260,6 +261,7 @@ class interface:
         mesh.vertices -= foo
 
         if scale != None:
+            
             mesh.vertices = mesh.vertices * np.sqrt(1 / mesh.area)
 
         return mesh, Center
@@ -417,7 +419,7 @@ class interface:
             os.makedirs(output_rotations)
         
         self.exportAlignedLandmarksNew(output)
-        #self.exportRotationsScale(output)
+        self.exportRotationsScaleTranslation(output)
         #self.exportScaleInfo(output)
         #self.exportRotations(output_rotations)
         total_time = time.time() - total_time
@@ -427,7 +429,7 @@ class interface:
 
 
     # Taken from auto3dgm slicer code
-    def landmarksFromPseudoLandmarks(self, subsampledMeshes, permutations, rotations):
+    def landmarksFromPseudoLandmarks(self, subsampledMeshes, permutations, rotations,origScale=False):
         meshes = []
         for i in range(len(subsampledMeshes)):
             mesh = self.sampledMeshes[i]
@@ -438,20 +440,27 @@ class interface:
             lmtranspose = V.T @ perm
             #landmarks = scaledV
             landmarks = np.transpose(np.matmul(rot,lmtranspose))
-            mesh = auto3dgm_nazar.mesh.meshfactory.MeshFactory.mesh_from_data(vertices=landmarks,name=mesh.name, center_scale=False, deep=True)
-            meshes.append(mesh)
+            if not origScale:
+                mesh = auto3dgm_nazar.mesh.meshfactory.MeshFactory.mesh_from_data(vertices=landmarks,name=mesh.name, center_scale=False, deep=True)
+                meshes.append(mesh)
+            else:
+                mesh = auto3dgm_nazar.mesh.meshfactory.MeshFactory.mesh_from_data(vertices=landmarks,name=mesh.name, center_scale=True, deep=True)
+                meshes.append(mesh)
 
         return(meshes)
 
 
 
     def exportAlignedLandmarksNew(self, output):
-        exportFolder = output + "landmarks/"
+        exportFolder = output + "scaled_landmarks/"
+        unscaleOutput = output + "unscaled_landmarks/"
+        self.touch(unscaleOutput)
         self.touch(exportFolder)
         m = self.sampledMeshes
         r = self.alignData.globalized_alignment['r']
         p = self.alignData.globalized_alignment['p']
-        landmarks = self.landmarksFromPseudoLandmarks(m, p, r)
+        landmarks = self.landmarksFromPseudoLandmarks(m, p, r, origScale = False)
+        unscaledLandmarks = self.landmarksFromPseudoLandmarks(m,p,r,origScale = True)
 
         # Create Pandas Dataframe
         colNames = ["Name"]
@@ -471,9 +480,21 @@ class interface:
             dfLandmarks.loc[len(dfLandmarks)] = data
 
         # Save landmarks
-        dfLandmarks.to_csv(os.path.join(output, "landmarks.csv"), index=False)
+        dfLandmarks.to_csv(os.path.join(output, "landmarks_scaled.csv"), index=False)
+        
+        dfUnscaledLandmarks = pd.DataFrame(columns=colNames)
+        
+        for l in unscaledLandmarks:
+            self.saveNumpyArrayToFcsv(l.vertices, os.path.join(unscaleOutput, l.name))
+            data = [l.name]
+            verts = np.array(l.vertices)
+            data.extend(verts.flatten())
+            dfUnscaledLandmarks.loc[len(dfUnscaledLandmarks)] = data
+            
+        dfUnscaledLandmarks.to_csv(os.path.join(output, "landmarks_unscaled.csv"), index=False)
+        
         #Write morphologika
-        fid = open(os.path.join(output, "morphologika.txt"),"w")
+        fid = open(os.path.join(output, "morphologika_scaled.txt"),"w")
         
         fid.write("[Individuals]\n")
         fid.write(str(dfLandmarks.shape[0]) + "\n")
@@ -488,6 +509,28 @@ class interface:
         fid.write("[rawpoints]\n")
         
         for l in landmarks:
+            fid.write("\n")
+            fid.write("\'"+l.name+"\n")
+            fid.write("\n")
+            for i in range(l.vertices.shape[0]):
+                fid.write("{:.7e}".format(l.vertices[i,0])+ " " + "{:.7e}".format(l.vertices[i,1]) + " " + "{:.7e}".format(l.vertices[i,2],7) + "\n")
+        fid.close()
+        
+        fid = open(os.path.join(output, "morphologika_unscaled.txt"),"w")
+        
+        fid.write("[Individuals]\n")
+        fid.write(str(dfUnscaledLandmarks.shape[0]) + "\n")
+        fid.write("[Landmarks]\n")
+        fid.write(str(self.settings["num_subsample"][1])+"\n")
+        fid.write("[dimensions]\n")
+        fid.write("3\n")
+        fid.write("[names]\n")
+        for l in unscaledLandmarks:
+            fid.write(l.name+"\n")
+        fid.write("\n")
+        fid.write("[rawpoints]\n")
+        
+        for l in unscaledLandmarks:
             fid.write("\n")
             fid.write("\'"+l.name+"\n")
             fid.write("\n")
@@ -542,9 +585,10 @@ class interface:
             self.saveNumpyArrayToCsv(rot, os.path.join(exportFolder, mesh.name))
 
 
-    def exportRotationsScale(self, output):
+    def exportRotationsScaleTranslation(self, output):
         rotations = dict()
         scale_mat = dict()
+        translation_mat = dict()
         exportFolder = output + "rotations/"
         self.touch(exportFolder)
         m = self.sampledMeshes
@@ -560,16 +604,25 @@ class interface:
         exportFolder = output + "scale/"
         self.touch(exportFolder)
 
-        meshes = self.scale
-        for idx, name in enumerate(meshes.keys()):
-            filename = os.path.join(exportFolder, name)
-            m = (1/meshes[name]) * np.diag([1, 1, 1])
-            scale_mat[name] = m
+        meshes = self.originalMeshes
+        for idx in range(len(meshes)):
+            filename = os.path.join(exportFolder, meshes[idx].name)
+            curMesh=trimesh.Trimesh(vertices=meshes[idx].vertices, faces=meshes[idx].faces, process=False)
+            curArea = np.sqrt(1.0/(curMesh.area+0.0)) * np.diag([1, 1, 1])
+            scale_mat[meshes[idx].name] = curArea
             self.saveNumpyArrayToCsv(m, filename)
+            
+        exportFolder = output + "translation/"
+        self.touch(exportFolder)
+        for idx in range(len(meshes)):
+            filename = os.path.join(exportFolder,meshes[idx].name)
+            Center = np.mean(meshes[idx].vertices, 0).reshape(1,3)
+            translation_mat[meshes[idx].name] = Center
+            self.saveNumpyArrayToCsv(Center,filename)
 
         # Create scale outputs
-        fields = ["Name", "Rotations", "", "", "", "Scale"]
-        filename = os.path.join(output, 'rotation_scale.csv')
+        fields = ["Name", "Rotations", "", "", "", "Scale","","","","Translation"]
+        filename = os.path.join(output, 'rotation_scale_translation.csv')
         
         with open(filename, 'w+', newline='') as f:
             write = csv.writer(f)
@@ -580,6 +633,8 @@ class interface:
                 row.extend(rotations[mesh][0])
                 row.append("")
                 row.extend(scale_mat[mesh][0])
+                row.append("")
+                row.extend(translation_mat[mesh][0])
                 write.writerow(row)
 
                 for i in range(1, len(rotations[mesh])):
@@ -587,7 +642,7 @@ class interface:
                     row.extend(rotations[mesh][i])
                     row.append("")
                     row.extend(scale_mat[mesh][i])
-                    write.writerow(row)                
+                    write.writerow(row)  
 
 
     def exportScaleInfo(self, output):
