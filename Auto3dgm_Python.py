@@ -385,6 +385,8 @@ class interface:
 
             # mesh_from_data doesn't create faces, so I used this workaround
             aligned_mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
+            if np.linalg.det(R) < 0:
+                aligned_mesh.faces=aligned_mesh.faces[:,[0,2,1]]
             aligned_mesh, _ = self.Centralize(aligned_mesh, scale=None)
             aligned_mesh.export(output_dir + name + '.ply')
             name = name.replace("_", "-")
