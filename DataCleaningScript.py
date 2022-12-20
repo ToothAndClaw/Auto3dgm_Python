@@ -33,6 +33,7 @@ touch(sphereDir)
 touch(badDir)
 
 for i in range(len(meshList)):
+    print(meshList[i],flush=True)
     ms=pml.MeshSet()
     try:
         ms.load_new_mesh(meshDir+meshList[i])
