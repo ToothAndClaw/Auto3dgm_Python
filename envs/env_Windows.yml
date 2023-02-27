@@ -1,4 +1,4 @@
-name: sams
+name: auto3dgm
 channels:
   - defaults
 dependencies:
