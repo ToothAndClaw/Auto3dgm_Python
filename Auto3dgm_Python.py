@@ -360,6 +360,8 @@ class interface:
 
 
         viewer_dir = os.getcwd() + "/viewer/aligned_meshes/"
+        if not os.path.exists(viewer_dir):
+            os.makedirs(viewer_dir)
         # Clear any previous meshes in the viewer folder
         for f in os.listdir(viewer_dir):
             os.remove(os.path.join(viewer_dir, f))
