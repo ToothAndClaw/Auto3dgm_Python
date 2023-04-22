@@ -5,3 +5,4 @@ scipy==1.4.1
 numpy==1.18.1
 trimesh==3.7.14
 mayavi==4.7.2
+pymeshlab=2022.2.post2
