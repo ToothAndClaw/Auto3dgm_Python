@@ -40,7 +40,7 @@ for i in range(len(meshList)):
     except:
         continue
     ms.set_current_mesh(0)
-    ms.meshing_remove_connected_component_by_diameter(mincomponentdiag=pml.Percentage(20))
+    #ms.meshing_remove_connected_component_by_diameter(mincomponentdiag=pml.Percentage(20))
     out_dict = ms.get_topological_measures()
 
     cnt = 0
@@ -48,12 +48,17 @@ for i in range(len(meshList)):
         ms.meshing_repair_non_manifold_edges(method=0)
         ms.meshing_repair_non_manifold_vertices(vertdispratio=0)
         ms.meshing_remove_unreferenced_vertices()
-        ms.meshing_close_holes(maxholesize=50,newfaceselected=True,selfintersection=True)
+        ms.meshing_remove_duplicate_faces()
+        ms.meshing_remove_duplicate_vertices()
+        try:
+            ms.meshing_close_holes(maxholesize=50,newfaceselected=True,selfintersection=True)
+        except:
+            continue
 
         out_dict = ms.get_topological_measures()
         cnt = cnt + 1
-        if cnt == 10:
-            print(out_dict,flush=True)
+        if cnt == 30:
+            print('Unable to clean without deleting some connected components, attempting...')
             break
     if out_dict['connected_components_number'] > 1:
         ms.generate_splitting_by_connected_components()
@@ -102,6 +107,8 @@ for i in range(len(meshList)):
         ms.meshing_repair_non_manifold_edges(method=0)
         ms.meshing_repair_non_manifold_vertices(vertdispratio=0)
         ms.meshing_remove_unreferenced_vertices()
+        ms.meshing_remove_duplicate_faces()
+        ms.meshing_remove_duplicate_vertices()
         if out_dict['connected_components_number'] > 1:
             ms.generate_splitting_by_connected_components()
             bestVol = 0
