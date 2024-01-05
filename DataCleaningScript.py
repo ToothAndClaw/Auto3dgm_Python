@@ -40,7 +40,7 @@ for i in range(len(meshList)):
     except:
         continue
     ms.set_current_mesh(0)
-    ms.meshing_remove_connected_component_by_diameter(mincomponentdiag=pml.Percentage(20))
+    #ms.meshing_remove_connected_component_by_diameter(mincomponentdiag=pml.Percentage(20))
     out_dict = ms.get_topological_measures()
 
     cnt = 0
