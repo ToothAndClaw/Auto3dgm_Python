@@ -73,7 +73,6 @@ class MeshFactory(object):
             vertices = vertices-np.matlib.repmat(np.mean(vertices,axis=0),numV,1)
             #print(vertices[0,:])
             #print(np.mean(vertices,axis=0))
-            vertices = vertices/np.linalg.norm(vertices,'fro')
         faces = array(faces, dtype=int)
         vertices = array(vertices,dtype=float)
 
@@ -96,7 +95,9 @@ class MeshFactory(object):
             #cells.SetCells(nf, vtk_id_array)
             #polydata.SetPolys(cells)
         #polydata=tvtk.to_tvtk(polydata)
-        return Mesh(vtk_mesh=polydata, center_scale=False, name=name)
+        finalMesh = Mesh(vtk_mesh=polydata, center_scale=center_scale, name=name)
+        
+        return finalMesh
 
     @staticmethod
     def off_parser(file_path):

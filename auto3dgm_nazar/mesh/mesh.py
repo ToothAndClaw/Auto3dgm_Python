@@ -71,13 +71,14 @@ class Mesh:
         return np.linalg.norm(self.vertices, 'fro')
 
     def center(self):
-        transform = vtk.vtkTransform()
-        transform.Translate(-self.centroid[0], -self.centroid[1], -self.centroid[2])
-        transformt = vtk.vtkTransformPolyDataFilter()
-        transformt.SetInputData(self.polydata)
-        transformt.SetTransform(transform)
-        transformt.Update()
-        self.polydata = transformt.GetOutput()
+        transform = tvtk.Transform()
+        transform.translate(-self.centroid[0], -self.centroid[1], -self.centroid[2])
+        transformt = tvtk.TransformPolyDataFilter()
+        transformt.set_input_data(self.polydata)
+        transformt.transform= transform
+        transformt.update()
+        self.polydata = transformt.get_output()
+        self.koodinimi = self.polydata.points.to_array()
 
     def scale_unit_norm(self):
         transform = tvtk.Transform()

@@ -318,16 +318,14 @@ class interface:
         numFail=0
         for name, mesh in ss_res[num_subsample[0]]['output'].items():
             mesh.name = name
-            newMesh = MeshFactory.mesh_from_data(mesh.koodinimi, center_scale=True, name=mesh.name)
-            low_res_meshes.append(newMesh)  
-            
+            newMesh = MeshFactory.mesh_from_data(mesh.koodinimi, center_scale=True, name=mesh.name) 
+            low_res_meshes.append(newMesh)
 
         self.sampledMeshes = []
         for name, mesh in ss_res[num_subsample[1]]['output'].items():
             mesh.name = name
             newMesh = MeshFactory.mesh_from_data(mesh.koodinimi, center_scale=True, name=mesh.name)
             self.sampledMeshes.append(newMesh)  
-
         sample_time = time.time() - sample_time
         print("--- %s seconds for sampling meshes ---" % (sample_time),flush=True)
         print("Finished sampling",flush=True)
@@ -444,11 +442,13 @@ class interface:
             lmtranspose = V.T @ perm
             #landmarks = scaledV
             landmarks = np.transpose(np.matmul(rot,lmtranspose))
+            print(mesh.initial_scale)
+            unscaledLandmarks = landmarks*mesh.initial_scale
             if not origScale:
                 mesh = auto3dgm_nazar.mesh.meshfactory.MeshFactory.mesh_from_data(vertices=landmarks,name=mesh.name, center_scale=False, deep=True)
                 meshes.append(mesh)
             else:
-                mesh = auto3dgm_nazar.mesh.meshfactory.MeshFactory.mesh_from_data(vertices=landmarks,name=mesh.name, center_scale=True, deep=True)
+                mesh = auto3dgm_nazar.mesh.meshfactory.MeshFactory.mesh_from_data(vertices=unscaledLandmarks,name=mesh.name, center_scale=False, deep=True)
                 meshes.append(mesh)
 
         return(meshes)
