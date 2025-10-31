@@ -71,14 +71,15 @@ class interface:
         if not hasattr(self, 'reflection_var'):
             self.reflection_var = tk.BooleanVar(value=True)
 
-        # toggle the boolean state
-        self.reflection_var.set(not self.reflection_var.get())
-
         # update button label to match state
         if self.reflection_var.get():
             self.reflection_btn["text"] = "Reflection"
+            # toggle the boolean state
+            self.reflection_var.set(True)
         else:
             self.reflection_btn["text"] = "No Reflection"
+            # toggle the boolean state
+            self.reflection_var.set(False)
     
 
     # Save settings
