@@ -41,7 +41,6 @@ class interface:
         self.originalMeshes = None
 
 
-
     # Clears tkinter 
     def clear(self):
         lst = self.root.grid_slaves()
@@ -56,7 +55,6 @@ class interface:
             widget.destroy()
 
 
-
     # Browse for file
     def browseFile(self, entry):
 
@@ -65,17 +63,22 @@ class interface:
             entry.delete(0,"end")
             entry.insert(0, filename)
     
-
     
     # Toggle function for reflection
-    # Done in this way to avoid global variable
-    def switchRefl(self):    
-        # Determine if switch is on or off
-        if self.reflection_btn["text"] == "Reflection": 
-            self.reflection_btn["text"] = "No Reflection"
-        else:
-            self.reflection_btn["text"] = "Reflection"
+    # Use explicit BooleanVar for the reflection state
+    def switchRefl(self):
+        # ensure the boolean state exists (default True to preserve prior behavior)
+        if not hasattr(self, 'reflection_var'):
+            self.reflection_var = tk.BooleanVar(value=True)
 
+        # toggle the boolean state
+        self.reflection_var.set(not self.reflection_var.get())
+
+        # update button label to match state
+        if self.reflection_var.get():
+            self.reflection_btn["text"] = "Reflection"
+        else:
+            self.reflection_btn["text"] = "No Reflection"
     
 
     # Save settings
@@ -95,10 +98,15 @@ class interface:
             num_cores = int(num_cores_e.get())
         sample_method = sample_method_var.get()
 
-        if reflection_btn["text"] == "Reflection": 
-            reflection = True
+        # determine reflection flag (prefer the explicit BooleanVar)
+        if hasattr(self, 'reflection_var'):
+            reflection = bool(self.reflection_var.get())
         else:
-            reflection = False
+            # fallback to previous behavior if the var doesn't exist
+            if reflection_btn["text"] == "Reflection":
+                reflection = True
+            else:
+                reflection = False
 
         mesh_dir = mesh_dir_entry.get()
         output_dir = output_dir_entry.get()
@@ -129,7 +137,6 @@ class interface:
         self.alignMeshController()
 
 
-
     # Set the settings for alignment
     def setSettings(self):
         self.running = True
@@ -152,6 +159,9 @@ class interface:
         sample_method_var = tk.StringVar()
         num_cores_var = tk.IntVar()
 
+        # explicit reflection state variable (default on)
+        self.reflection_var = tk.BooleanVar(value=True)
+
 
         # Entries
         num_subsample_e1 = tk.Entry(self.root, width=ENTRY_WIDTH)
@@ -162,7 +172,6 @@ class interface:
         num_cores_e = tk.Entry(self.root, width=ENTRY_WIDTH)
 
         mesh_dir_entry, output_dir_entry = tk.Entry(self.root, width=FILE_WIDTH), tk.Entry(self.root, width=FILE_WIDTH)
-
         
 
         # Toggle Button 
@@ -172,6 +181,11 @@ class interface:
 
         self.reflection_btn = reflection_btn
                              
+        # Ensure label matches the BooleanVar at creation
+        if self.reflection_var.get():
+            self.reflection_btn["text"] = "Reflection"
+        else:
+            self.reflection_btn["text"] = "No Reflection"
         
 
         # Radio Buttons
@@ -238,7 +252,6 @@ class interface:
         # Put Padding around all elements
         for child in self.root.winfo_children():
             child.grid_configure(padx=10)
-
         
 
     # Start loading bar
@@ -253,7 +266,6 @@ class interface:
         self.root.mainloop()
 
 
-
     # Centers and gives unit surface area
     def Centralize(self, mesh, scale=None):
         Center = np.mean(mesh.vertices, 0).reshape(1,3)
@@ -265,7 +277,6 @@ class interface:
             mesh.vertices = mesh.vertices * np.sqrt(1 / mesh.area)
 
         return mesh, Center
-
 
     def convert(self):
         mesh_dir = self.settings["mesh_dir"]
@@ -282,9 +293,6 @@ class interface:
                 mesh.export(output_dir + filename + '.ply')
 
         self.settings["mesh_dir"] = output_dir
-
-
-
 
 
     # Samples and aligns meshes
@@ -356,7 +364,6 @@ class interface:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-
         viewer_dir = os.getcwd() + "/viewer/aligned_meshes/"
         if not os.path.exists(viewer_dir):
             os.makedirs(viewer_dir)
@@ -398,8 +405,6 @@ class interface:
         print("Aligned meshes saved \n" )
         self.root.quit()
 
-
-
     # Controller to run loading bar and alignment concurrently
     def alignMeshController(self):
         self.root.destroy()
@@ -429,7 +434,6 @@ class interface:
         
         self.complete()
 
-
     # Taken from auto3dgm slicer code
     def landmarksFromPseudoLandmarks(self, subsampledMeshes, permutations, rotations,origScale=False):
         meshes = []
@@ -452,7 +456,6 @@ class interface:
                 meshes.append(mesh)
 
         return(meshes)
-
 
 
     def exportAlignedLandmarksNew(self, output):
@@ -514,7 +517,7 @@ class interface:
         
         for l in landmarks:
             fid.write("\n")
-            fid.write("\'"+l.name+"\n")
+            fid.write("'"+l.name+"\n")
             fid.write("\n")
             for i in range(l.vertices.shape[0]):
                 fid.write("{:.7e}".format(l.vertices[i,0])+ " " + "{:.7e}".format(l.vertices[i,1]) + " " + "{:.7e}".format(l.vertices[i,2],7) + "\n")
@@ -536,7 +539,7 @@ class interface:
         
         for l in unscaledLandmarks:
             fid.write("\n")
-            fid.write("\'"+l.name+"\n")
+            fid.write("'"+l.name+"\n")
             fid.write("\n")
             for i in range(l.vertices.shape[0]):
                 fid.write("{:.7e}".format(l.vertices[i,0])+ " " + "{:.7e}".format(l.vertices[i,1]) + " " + "{:.7e}".format(l.vertices[i,2],7) + "\n")
@@ -666,7 +669,6 @@ class interface:
         httpd.serve_forever()
     
 
-
     # Visualize the meshes in browser
     def visualize(self):
         # Start the server in a new thread
@@ -681,10 +683,7 @@ class interface:
 
         # Open the web browser 
         webbrowser.open('http://localhost:{}/auto3dgm.html'.format(PORT))
-
         
-
-
 
     # Opens dialog for viewing mesh or exiting
     def complete(self):
@@ -703,11 +702,7 @@ class interface:
 
         btn_yes.grid(row=1, column=0, sticky="W", columnspan = SPAN_WIDTH, pady=PADY, padx=PADX)
         btn_no.grid(row=1, column=2, sticky="W", columnspan = SPAN_WIDTH, pady=PADY, padx=PADX)
-
-
    
-
-
 
 if __name__ == "__main__":
     inter = interface()
