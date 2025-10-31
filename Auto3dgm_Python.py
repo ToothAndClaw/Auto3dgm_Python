@@ -99,15 +99,8 @@ class interface:
             num_cores = int(num_cores_e.get())
         sample_method = sample_method_var.get()
 
-        # determine reflection flag (prefer the explicit BooleanVar)
-        if hasattr(self, 'reflection_var'):
-            reflection = bool(self.reflection_var.get())
-        else:
-            # fallback to previous behavior if the var doesn't exist
-            if reflection_btn["text"] == "Reflection":
-                reflection = True
-            else:
-                reflection = False
+        # determine reflection flag
+        reflection = bool(self.reflection_var.get())
 
         mesh_dir = mesh_dir_entry.get()
         output_dir = output_dir_entry.get()
